@@ -15,3 +15,13 @@ export interface User {
   id: number;
   name: string;
 }
+
+export interface Book {
+  title: string;
+  cover: {
+    medium: string;
+  };
+  identifiers: {
+    isbn_10: number;
+  };
+}

@@ -1,4 +1,4 @@
-import { State, Gift } from './types';
+import { State, Gift, Book } from './types';
 import produce, {
   enableAllPlugins,
   original,
@@ -49,12 +49,12 @@ export const getBookDetails = async (isbn: string) => {
     }
   );
 
-  const book = (await response.json())['ISBN:' + isbn];
+  const book: Book = (await response.json())['ISBN:' + isbn];
 
   return book;
 };
 
-export const addBook = produce((draft, book) => {
+export const addBook = produce((draft, book: Book) => {
   if (book) {
     draft.gifts.push({
       id: book.identifiers?.isbn_10,
