@@ -26,10 +26,18 @@ export interface Book {
   };
 }
 
-export interface Action {
-  type: 'ADD_GIFT' | 'TOGGLE_RESERVATION' | 'ADD_BOOK' | 'RESET';
+export interface ActionBook {
+  type: 'ADD_BOOK';
+  book: Book;
+}
+
+export interface ActionGift {
+  type: 'ADD_GIFT' | 'TOGGLE_RESERVATION';
   image?: string;
   description?: string;
-  id?: string;
-  book?: Book;
+  id: string;
+}
+
+export interface ActionReset {
+  type: 'RESET';
 }

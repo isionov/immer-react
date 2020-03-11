@@ -1,4 +1,11 @@
-import { State, Gift, Book, Action } from './types';
+import {
+  State,
+  Gift,
+  Book,
+  ActionReset,
+  ActionBook,
+  ActionGift,
+} from './types';
 import produce, {
   enableAllPlugins,
   original,
@@ -11,19 +18,20 @@ import defaultGifts from './gifts.json';
 
 enableAllPlugins();
 
-export const giftsReducer: (base: State, action: Action) => State = produce(
-  (draft: Draft<State>, action: Action) => {
+export const giftsReducer: (
+  base: State,
+  action: ActionReset | ActionBook | ActionGift
+) => State = produce(
+  (draft: Draft<State>, action: ActionReset | ActionBook | ActionGift) => {
     switch (action.type) {
       case 'ADD_GIFT':
-        const { id, description, image } = action;
-        if (id && description && image) {
-          draft.gifts.push({
-            id,
-            description,
-            image,
-            reservedBy: undefined,
-          });
-        }
+        const { id, description = '', image = '' } = action;
+        draft.gifts.push({
+          id,
+          description,
+          image,
+          reservedBy: undefined,
+        });
         break;
       case 'TOGGLE_RESERVATION':
         const gift = draft.gifts.find(gift => gift.id === action.id);

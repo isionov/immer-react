@@ -1,5 +1,5 @@
-import { addGift, toggleReservation, addBook, getBookDetails } from './gifts';
-import { State } from './types';
+import { giftsReducer, getBookDetails } from './gifts';
+import { State, ActionBook } from './types';
 import { setAutoFreeze } from 'immer';
 
 export const initialState: State = {
@@ -35,8 +35,13 @@ export const initialState: State = {
   ],
 };
 
-describe('Reserving an unreserved gift', () => {
-  const nextState = addGift(initialState, 'mug', 'coffee mug', '');
+describe('Adding a gift', () => {
+  const nextState = giftsReducer(initialState, {
+    type: 'ADD_GIFT',
+    id: 'mug',
+    description: 'coffee mug',
+    image: '',
+  });
 
   test('added a gift to the collection', () => {
     expect(nextState.gifts.length).toBe(3);
@@ -48,7 +53,10 @@ describe('Reserving an unreserved gift', () => {
 });
 
 describe('Reserving an unreserved gift', () => {
-  const nextState = toggleReservation(initialState, 'egghead_subscription');
+  const nextState = giftsReducer(initialState, {
+    type: 'TOGGLE_RESERVATION',
+    id: 'egghead_subscription',
+  });
 
   test('correctly stores reservedById', () => {
     expect(nextState.gifts[1].reservedBy).toBe(1);
@@ -72,7 +80,10 @@ describe('Reserving an unreserved gift', () => {
 });
 
 describe('Reserving an already reserved gift', () => {
-  const nextState = toggleReservation(initialState, 'immer_license');
+  const nextState = giftsReducer(initialState, {
+    type: 'TOGGLE_RESERVATION',
+    id: 'immer_license',
+  });
 
   test('preserves stored reservedBy', () => {
     expect(nextState.gifts[0].reservedBy).toBe(2);
@@ -89,7 +100,7 @@ describe('can add book async', () => {
   test('can add marh book', async () => {
     const book = await getBookDetails('0201558025');
 
-    const nextState = addBook(initialState, book);
+    const nextState = giftsReducer(initialState, { type: 'ADD_BOOK', book });
 
     expect(nextState.gifts[2].description).toBe('Concrete mathematics');
   });
@@ -97,10 +108,15 @@ describe('can add book async', () => {
   test('can add 2 book in parallel', async () => {
     const promise1 = getBookDetails('0201558025');
     const promise2 = getBookDetails('9781598560169');
-    const nextState = addBook(
-      addBook(initialState, await promise1),
-      await promise2
-    );
+    const addBook1: ActionBook = {
+      type: 'ADD_BOOK',
+      book: await promise1,
+    };
+    const addBook2: ActionBook = {
+      type: 'ADD_BOOK',
+      book: await promise2,
+    };
+    const nextState = [addBook1, addBook2].reduce(giftsReducer, initialState);
 
     expect(nextState.gifts.length).toBe(4);
   });
