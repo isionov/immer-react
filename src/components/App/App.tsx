@@ -7,6 +7,7 @@ import {
   addGift,
   toggleReservation,
   getBookDetails,
+  addBook,
 } from '../../modules/gifts/gifts';
 import { User, Gift, State } from '../../modules/gifts/types';
 
@@ -38,67 +39,94 @@ const GiftComponent = memo<GiftProps>(
 );
 
 function GiftList() {
-  const [state, updateState] = useImmer(() => getInitialState());
+  const [state, updateState] = useState(() => getInitialState());
   const { users, currentUser, gifts } = state;
+
+  // Нужно вместо useState использовать useImmer!!!! для получения updateState
+  // const handleAdd = () => {
+  //   const description = prompt('Gift to add');
+
+  //   if (description) {
+  //     updateState((draft: State) => {
+  //       draft.gifts.push({
+  //         id: uuidv4(),
+  //         description,
+  //         image: `https://picsum.photos/id/${Math.round(
+  //           Math.random() * 1000
+  //         )}/200/200`,
+  //         reservedBy: undefined,
+  //       });
+  //     });
+  //   }
+  // };
 
   const handleAdd = () => {
     const description = prompt('Gift to add');
 
     if (description) {
-      updateState((draft: State) => {
-        draft.gifts.push({
-          id: uuidv4(),
+      updateState(state =>
+        addGift(
+          state,
+          uuidv4(),
           description,
-          image: `https://picsum.photos/id/${Math.round(
-            Math.random() * 1000
-          )}/200/200`,
-          reservedBy: undefined,
-        });
-      });
+          `https://picsum.photos/id/${Math.round(Math.random() * 1000)}/200/200`
+        )
+      );
     }
   };
 
-  // const handleAdd = () => {
-  //   const description = prompt('Gift to add');
+  // Нужно вместо useState использовать useImmer!!!! для получения updateState
+  // const handleReserve = useCallback(
+  //   (id: string) => {
+  //     updateState((draft: State) => {
+  //       const gift = draft.gifts.find(gift => gift.id === id);
+  //       if (gift) {
+  //         gift.reservedBy =
+  //           gift.reservedBy === undefined
+  //             ? draft.currentUser.id
+  //             : gift.reservedBy === original(draft.currentUser)?.id
+  //             ? undefined
+  //             : gift.reservedBy;
+  //       }
+  //     });
+  //   },
+  //   [updateState]
+  // );
 
-  //   if (description) {
-  //     updateState(state =>
-  //       addGift(
-  //         state,
-  //         uuidv4(),
-  //         description,
-  //         `https://picsum.photos/id/${Math.round(Math.random() * 1000)}/200/200`
-  //       )
-  //     );
-  //   }
+  const handleReserve = useCallback((id: string) => {
+    updateState(state => toggleReservation(state, id));
+  }, []);
+
+  // Нужно вместо useState использовать useImmer!!!! для получения updateState
+  // const handleReset = () => {
+  //   updateState(draft => {
+  //     return getInitialState();
+  //   });
   // };
 
-  const handleReserve = useCallback(
-    (id: string) => {
-      updateState((draft: State) => {
-        const gift = draft.gifts.find(gift => gift.id === id);
-        if (gift) {
-          gift.reservedBy =
-            gift.reservedBy === undefined
-              ? draft.currentUser.id
-              : gift.reservedBy === original(draft.currentUser)?.id
-              ? undefined
-              : gift.reservedBy;
-        }
-      });
-    },
-    [updateState]
-  );
-
-  // const handleReserve = useCallback((id: string) => {
-  //   updateState(state => toggleReservation(state, id));
-  // }, []);
-
   const handleReset = () => {
-    updateState(draft => {
-      return getInitialState();
-    });
+    updateState(getInitialState());
   };
+
+  // Нужно вместо useState использовать useImmer!!!! для получения updateState
+  // const handleAddBook = async () => {
+  //   const isbn = prompt('Enter ISNB number', '0201558025');
+
+  //   if (isbn) {
+  //     const book = await getBookDetails(isbn);
+
+  //     updateState(draft => {
+  //       if (book) {
+  //         draft.gifts.push({
+  //           id: isbn,
+  //           description: book.title,
+  //           image: book.cover?.medium,
+  //           reservedBy: undefined,
+  //         });
+  //       }
+  //     });
+  //   }
+  // };
 
   const handleAddBook = async () => {
     const isbn = prompt('Enter ISNB number', '0201558025');
@@ -106,16 +134,9 @@ function GiftList() {
     if (isbn) {
       const book = await getBookDetails(isbn);
 
-      updateState(draft => {
-        if (book) {
-          draft.gifts.push({
-            id: isbn,
-            description: book.title,
-            image: book.cover?.medium,
-            reservedBy: undefined,
-          });
-        }
-      });
+      if (book) {
+        updateState(state => addBook(state, book));
+      }
     }
   };
 
