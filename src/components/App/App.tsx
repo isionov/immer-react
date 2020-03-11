@@ -1,15 +1,11 @@
-import React, { memo, useState, useCallback } from 'react';
+import React, { memo, useCallback, useReducer } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import produce, { original } from 'immer';
-import { useImmer } from 'use-immer';
 import {
   getInitialState,
-  addGift,
-  toggleReservation,
   getBookDetails,
-  addBook,
+  giftsReducer,
 } from '../../modules/gifts/gifts';
-import { User, Gift, State } from '../../modules/gifts/types';
+import { User, Gift } from '../../modules/gifts/types';
 
 interface GiftProps {
   gift: Gift;
@@ -39,94 +35,36 @@ const GiftComponent = memo<GiftProps>(
 );
 
 function GiftList() {
-  const [state, updateState] = useState(() => getInitialState());
+  const [state, dispatch] = useReducer(giftsReducer, getInitialState());
   const { users, currentUser, gifts } = state;
-
-  // Нужно вместо useState использовать useImmer!!!! для получения updateState
-  // const handleAdd = () => {
-  //   const description = prompt('Gift to add');
-
-  //   if (description) {
-  //     updateState((draft: State) => {
-  //       draft.gifts.push({
-  //         id: uuidv4(),
-  //         description,
-  //         image: `https://picsum.photos/id/${Math.round(
-  //           Math.random() * 1000
-  //         )}/200/200`,
-  //         reservedBy: undefined,
-  //       });
-  //     });
-  //   }
-  // };
 
   const handleAdd = () => {
     const description = prompt('Gift to add');
 
     if (description) {
-      updateState(state =>
-        addGift(
-          state,
-          uuidv4(),
-          description,
-          `https://picsum.photos/id/${Math.round(Math.random() * 1000)}/200/200`
-        )
-      );
+      dispatch({
+        type: 'ADD_GIFT',
+        id: uuidv4(),
+        description,
+        image: `https://picsum.photos/id/${Math.round(
+          Math.random() * 1000
+        )}/200/200`,
+      });
     }
   };
 
-  // Нужно вместо useState использовать useImmer!!!! для получения updateState
-  // const handleReserve = useCallback(
-  //   (id: string) => {
-  //     updateState((draft: State) => {
-  //       const gift = draft.gifts.find(gift => gift.id === id);
-  //       if (gift) {
-  //         gift.reservedBy =
-  //           gift.reservedBy === undefined
-  //             ? draft.currentUser.id
-  //             : gift.reservedBy === original(draft.currentUser)?.id
-  //             ? undefined
-  //             : gift.reservedBy;
-  //       }
-  //     });
-  //   },
-  //   [updateState]
-  // );
-
   const handleReserve = useCallback((id: string) => {
-    updateState(state => toggleReservation(state, id));
+    dispatch({
+      type: 'TOGGLE_RESERVATION',
+      id,
+    });
   }, []);
 
-  // Нужно вместо useState использовать useImmer!!!! для получения updateState
-  // const handleReset = () => {
-  //   updateState(draft => {
-  //     return getInitialState();
-  //   });
-  // };
-
   const handleReset = () => {
-    updateState(getInitialState());
+    dispatch({
+      type: 'RESET',
+    });
   };
-
-  // Нужно вместо useState использовать useImmer!!!! для получения updateState
-  // const handleAddBook = async () => {
-  //   const isbn = prompt('Enter ISNB number', '0201558025');
-
-  //   if (isbn) {
-  //     const book = await getBookDetails(isbn);
-
-  //     updateState(draft => {
-  //       if (book) {
-  //         draft.gifts.push({
-  //           id: isbn,
-  //           description: book.title,
-  //           image: book.cover?.medium,
-  //           reservedBy: undefined,
-  //         });
-  //       }
-  //     });
-  //   }
-  // };
 
   const handleAddBook = async () => {
     const isbn = prompt('Enter ISNB number', '0201558025');
@@ -135,7 +73,10 @@ function GiftList() {
       const book = await getBookDetails(isbn);
 
       if (book) {
-        updateState(state => addBook(state, book));
+        dispatch({
+          type: 'ADD_BOOK',
+          book,
+        });
       }
     }
   };

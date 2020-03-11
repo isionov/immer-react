@@ -22,6 +22,14 @@ export interface Book {
     medium: string;
   };
   identifiers: {
-    isbn_10: number;
+    isbn_10: string;
   };
+}
+
+export interface Action {
+  type: 'ADD_GIFT' | 'TOGGLE_RESERVATION' | 'ADD_BOOK' | 'RESET';
+  image?: string;
+  description?: string;
+  id?: string;
+  book?: Book;
 }
