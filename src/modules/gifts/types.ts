@@ -1,14 +1,19 @@
+import { Patch } from 'immer';
+
 export interface State {
   users: User[];
   currentUser: User;
-  gifts: Gift[];
+  gifts: Gifts;
 }
 
+export interface Gifts {
+  [id: string]: Gift;
+}
 export interface Gift {
   id: string;
   description: string;
   image: string;
-  reservedBy: number | undefined;
+  reservedBy: number | undefined | null;
 }
 
 export interface User {
@@ -40,4 +45,9 @@ export interface ActionGift {
 
 export interface ActionReset {
   type: 'RESET';
+}
+
+export interface ActionApplyPatches {
+  type: 'APPLY_PATCHES';
+  patches: Patch[];
 }

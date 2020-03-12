@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
+import { Patch } from 'immer';
 
-export const useSocket = (url: string, onMessage: (data: string) => void) => {
+export const useSocket = (url: string, onMessage: (data: Patch[]) => void) => {
   const socket = useRef<WebSocket>(WebSocket.prototype);
   const msgHandler = useRef<Function>(() => {});
 

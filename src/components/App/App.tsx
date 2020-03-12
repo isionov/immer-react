@@ -1,11 +1,14 @@
-import React, { memo, useCallback, useReducer } from 'react';
+import React, { memo, useCallback, useReducer, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
   getInitialState,
   getBookDetails,
   giftsReducer,
+  patchGeneratingGiftsReducer,
 } from '../../modules/gifts/gifts';
-import { User, Gift } from '../../modules/gifts/types';
+import { User, Gift, ActionApplyPatches } from '../../modules/gifts/types';
+import { useSocket } from '../../modules/socket/useSocket';
+import { Patch } from 'immer';
 
 interface GiftProps {
   gift: Gift;
@@ -35,8 +38,34 @@ const GiftComponent = memo<GiftProps>(
 );
 
 function GiftList() {
-  const [state, dispatch] = useReducer(giftsReducer, getInitialState());
+  const [state, setState] = useState(() => getInitialState());
   const { users, currentUser, gifts } = state;
+
+  const send = useSocket('ws://localhost:5001', function onMessage(
+    patches: Patch[]
+  ) {
+    console.dir(patches);
+    const action: ActionApplyPatches = {
+      type: 'APPLY_PATCHES',
+      patches: patches,
+    };
+    setState(giftsReducer(state, action));
+  });
+
+  const dispatch = useCallback(
+    action => {
+      setState(currentState => {
+        const [nextState, patches] = patchGeneratingGiftsReducer(
+          currentState,
+          action
+        );
+        send(patches);
+
+        return nextState;
+      });
+    },
+    [send]
+  );
 
   const handleAdd = () => {
     const description = prompt('Gift to add');
@@ -53,12 +82,15 @@ function GiftList() {
     }
   };
 
-  const handleReserve = useCallback((id: string) => {
-    dispatch({
-      type: 'TOGGLE_RESERVATION',
-      id,
-    });
-  }, []);
+  const handleReserve = useCallback(
+    (id: string) => {
+      dispatch({
+        type: 'TOGGLE_RESERVATION',
+        id,
+      });
+    },
+    [dispatch]
+  );
 
   const handleReset = () => {
     dispatch({
@@ -94,10 +126,10 @@ function GiftList() {
         <button>Redo</button>
       </div>
       <div className="gifts">
-        {gifts.map(gift => (
+        {Object.keys(gifts).map(giftId => (
           <GiftComponent
-            key={gift.id}
-            gift={gift}
+            key={gifts[giftId].id}
+            gift={gifts[giftId]}
             users={users}
             currentUser={currentUser}
             onReserve={handleReserve}
