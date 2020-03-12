@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useReducer, useState } from 'react';
+import React, { memo, useCallback, useReducer, useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
   getInitialState,
@@ -39,6 +39,9 @@ const GiftComponent = memo<GiftProps>(
 
 function GiftList() {
   const [state, setState] = useState(() => getInitialState());
+  const undoStack = useRef<{ patches: Patch[]; inversePatches: Patch[] }[]>([]);
+  const undoStackPointer = useRef(-1);
+
   const { users, currentUser, gifts } = state;
 
   const send = useSocket('ws://localhost:5001', function onMessage(
@@ -53,13 +56,21 @@ function GiftList() {
   });
 
   const dispatch = useCallback(
-    action => {
+    (action, undoable = true) => {
       setState(currentState => {
-        const [nextState, patches] = patchGeneratingGiftsReducer(
-          currentState,
-          action
-        );
+        const [
+          nextState,
+          patches,
+          inversePatches,
+        ] = patchGeneratingGiftsReducer(currentState, action);
         send(patches);
+
+        if (undoable) {
+          const pointer = ++undoStackPointer.current;
+
+          undoStack.current.length = pointer;
+          undoStack.current[pointer] = { patches, inversePatches };
+        }
 
         return nextState;
       });
@@ -112,6 +123,28 @@ function GiftList() {
       }
     }
   };
+  const handleUndo = () => {
+    if (undoStackPointer.current < 0) return;
+
+    const patches = undoStack.current[undoStackPointer.current].inversePatches;
+    if (patches) {
+      const action: ActionApplyPatches = { type: 'APPLY_PATCHES', patches };
+
+      undoStackPointer.current--;
+      dispatch(action, false);
+    }
+  };
+
+  const handleRedo = () => {
+    if (undoStackPointer.current === undoStack.current.length - 1) return;
+    undoStackPointer.current++;
+    const patches = undoStack.current[undoStackPointer.current].patches;
+    if (patches) {
+      const action: ActionApplyPatches = { type: 'APPLY_PATCHES', patches };
+
+      dispatch(action, false);
+    }
+  };
 
   return (
     <div className="app">
@@ -122,8 +155,15 @@ function GiftList() {
         <button onClick={handleAdd}>Add</button>
         <button onClick={handleAddBook}>Add Book</button>
         <button onClick={handleReset}>Reset</button>
-        <button>Undo</button>
-        <button>Redo</button>
+        <button onClick={handleUndo} disabled={undoStackPointer.current < 0}>
+          Undo
+        </button>
+        <button
+          onClick={handleRedo}
+          disabled={undoStackPointer.current === undoStack.current.length - 1}
+        >
+          Redo
+        </button>
       </div>
       <div className="gifts">
         {Object.keys(gifts).map(giftId => (
