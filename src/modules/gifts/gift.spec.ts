@@ -90,10 +90,13 @@ describe('Reserving an unreserved gift', () => {
 });
 
 describe('Reserving an unreserved gift with patched', () => {
-  const [nextState, patches] = patchGeneratingGiftsReducer(initialState, {
-    type: 'TOGGLE_RESERVATION',
-    id: 'egghead_subscription',
-  });
+  const [nextState, patches, inversePatches] = patchGeneratingGiftsReducer(
+    initialState,
+    {
+      type: 'TOGGLE_RESERVATION',
+      id: 'egghead_subscription',
+    }
+  );
 
   test('correctly stores reservedById', () => {
     expect(nextState.gifts['egghead_subscription'].reservedBy).toBe(1);
@@ -111,6 +114,26 @@ describe('Reserving an unreserved gift with patched', () => {
 
   test('aplaying patches produces the same state - 1', () => {
     expect(applyPatches(initialState, patches)).toEqual(nextState);
+  });
+
+  test('inverse patches restore the original state', () => {
+    expect(applyPatches(nextState, inversePatches)).toEqual(initialState);
+  });
+
+  test('correct inverse patches are generated', () => {
+    expect(inversePatches).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "op": "replace",
+          "path": Array [
+            "gifts",
+            "egghead_subscription",
+            "reservedBy",
+          ],
+          "value": undefined,
+        },
+      ]
+    `);
   });
 
   test('aplaying patches produces the same state - 2', () => {

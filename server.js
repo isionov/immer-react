@@ -1,9 +1,13 @@
 import { Server as WebsocketServer } from 'ws';
+import gifts from './src/modules/gifts/gifts.json';
+import { produceWithPatches, applyPatches, enablePatches } from 'immer';
+enablePatches();
 
+const initialState = { gifts };
 const wss = new WebsocketServer({ port: 5001 });
 
-const connections = [];
-const history = [];
+let connections = [];
+let history = [];
 
 wss.on('connection', ws => {
   console.log('New connection');
@@ -26,3 +30,16 @@ wss.on('connection', ws => {
 
   ws.send(JSON.stringify(history));
 });
+
+function compressHistory(currentPatches) {
+  const [, patches] = produceWithPatches(initialState, draft => {
+    return applyPatches(draft, currentPatches);
+  });
+  console.log(`compress history from ${currentPatches} to ${patches}`);
+
+  return patches;
+}
+
+setInterval(() => {
+  history = compressHistory(history);
+}, 5000);
